@@ -11,14 +11,17 @@ from streamlit_drawable_canvas import st_canvas
 
 import torch
 import torchvision.transforms as torchvision_T
-from torchvision.models.segmentation import deeplabv3_resnet50, deeplabv3_mobilenet_v3_large
+from torchvision.models.segmentation import (
+    deeplabv3_resnet50,
+    deeplabv3_mobilenet_v3_large,
+)
 
 
 @st.cache(allow_output_mutation=True)
 def load_model(num_classes=2, model_name="mbv3", device=torch.device("cpu")):
     if model_name == "mbv3":
         model = deeplabv3_mobilenet_v3_large(num_classes=num_classes, aux_loss=True)
-        checkpoint_path = os.path.join(os.getcwd(), "model_mbv3_iou_mix_2C049.pth")
+        checkpoint_path = os.path.join(os.getcwd(), "model_mbv3_iou_mix_2C_aux.pth")
     else:
         model = deeplabv3_resnet50(num_classes=num_classes, aux_loss=True)
         checkpoint_path = os.path.join(os.getcwd(), "model_r50_iou_mix_2C020.pth")
@@ -33,7 +36,9 @@ def load_model(num_classes=2, model_name="mbv3", device=torch.device("cpu")):
     return model
 
 
-def image_preprocess_transforms(mean=(0.4611, 0.4359, 0.3905), std=(0.2193, 0.2150, 0.2109)):
+def image_preprocess_transforms(
+    mean=(0.4611, 0.4359, 0.3905), std=(0.2193, 0.2150, 0.2109)
+):
     common_transforms = torchvision_T.Compose(
         [
             torchvision_T.ToTensor(),
@@ -88,7 +93,9 @@ def scan(image_true=None, trained_model=None, image_size=384, BUFFER=10):
 
     imH, imW, C = image_true.shape
 
-    image_model = cv2.resize(image_true, (IMAGE_SIZE, IMAGE_SIZE), interpolation=cv2.INTER_NEAREST)
+    image_model = cv2.resize(
+        image_true, (IMAGE_SIZE, IMAGE_SIZE), interpolation=cv2.INTER_NEAREST
+    )
 
     scale_x = imW / IMAGE_SIZE
     scale_y = imH / IMAGE_SIZE
@@ -102,7 +109,13 @@ def scan(image_true=None, trained_model=None, image_size=384, BUFFER=10):
     del image_model
     gc.collect()
 
-    out = torch.argmax(out, dim=1, keepdims=True).permute(0, 2, 3, 1)[0].numpy().squeeze().astype(np.int32)
+    out = (
+        torch.argmax(out, dim=1, keepdims=True)
+        .permute(0, 2, 3, 1)[0]
+        .numpy()
+        .squeeze()
+        .astype(np.int32)
+    )
     r_H, r_W = out.shape
 
     _out_extended = np.zeros((IMAGE_SIZE + r_H, IMAGE_SIZE + r_W), dtype=out.dtype)
@@ -134,7 +147,10 @@ def scan(image_true=None, trained_model=None, image_size=384, BUFFER=10):
     # if not find smallest enclosing box, expand_image then extract document
     # else extract document
 
-    if not (np.all(corners.min(axis=0) >= (0, 0)) and np.all(corners.max(axis=0) <= (imW, imH))):
+    if not (
+        np.all(corners.min(axis=0) >= (0, 0))
+        and np.all(corners.max(axis=0) <= (imW, imH))
+    ):
 
         left_pad, top_pad, right_pad, bottom_pad = 0, 0, 0, 0
 
@@ -164,10 +180,15 @@ def scan(image_true=None, trained_model=None, image_size=384, BUFFER=10):
             bottom_pad = (box_y_max - imH) + BUFFER
 
         # new image with additional zeros pixels
-        image_extended = np.zeros((top_pad + bottom_pad + imH, left_pad + right_pad + imW, C), dtype=image_true.dtype)
+        image_extended = np.zeros(
+            (top_pad + bottom_pad + imH, left_pad + right_pad + imW, C),
+            dtype=image_true.dtype,
+        )
 
         # adjust original image within the new 'image_extended'
-        image_extended[top_pad : top_pad + imH, left_pad : left_pad + imW, :] = image_true
+        image_extended[
+            top_pad : top_pad + imH, left_pad : left_pad + imW, :
+        ] = image_true
         image_extended = image_extended.astype(np.float32)
 
         # shifting 'box_corners' the required amount
@@ -180,9 +201,16 @@ def scan(image_true=None, trained_model=None, image_size=384, BUFFER=10):
     corners = sorted(corners.tolist())
     corners = order_points(corners)
     destination_corners = find_dest(corners)
-    M = cv2.getPerspectiveTransform(np.float32(corners), np.float32(destination_corners))
+    M = cv2.getPerspectiveTransform(
+        np.float32(corners), np.float32(destination_corners)
+    )
 
-    final = cv2.warpPerspective(image_true, M, (destination_corners[2][0], destination_corners[2][1]), flags=cv2.INTER_LANCZOS4)
+    final = cv2.warpPerspective(
+        image_true,
+        M,
+        (destination_corners[2][0], destination_corners[2][1]),
+        flags=cv2.INTER_LANCZOS4,
+    )
     final = np.clip(final, a_min=0, a_max=255)
     final = final.astype(np.uint8)
 
@@ -218,7 +246,11 @@ st.title("Document Scanner: Semantic Segmentation using DeepLabV3-PyTorch")
 
 uploaded_file = st.file_uploader("Upload Document Image :", type=["png", "jpg", "jpeg"])
 
-method = st.radio("Select Document Segmentation Model:", ("MobilenetV3-Large", "Resnet-50"), horizontal=True)
+method = st.radio(
+    "Select Document Segmentation Model:",
+    ("MobilenetV3-Large", "Resnet-50"),
+    horizontal=True,
+)
 
 col1, col2 = st.columns((6, 5))
 
@@ -246,4 +278,7 @@ if uploaded_file is not None:
     if final is not None:
         # Display link.
         result = Image.fromarray(final[:, :, ::-1])
-        st.markdown(get_image_download_link(result, "output.png", "Download " + "Output"), unsafe_allow_html=True)
+        st.markdown(
+            get_image_download_link(result, "output.png", "Download " + "Output"),
+            unsafe_allow_html=True,
+        )

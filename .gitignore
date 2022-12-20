@@ -1,1 +1,3 @@
 document_dataset_resized/*
+.ipynb_checkpoints
+__pycache__
