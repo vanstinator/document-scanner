@@ -1,7 +1,8 @@
 import os
-import cv2
-import shutil
 import random
+import shutil
+
+import cv2
 import numpy as np
 
 np.random.seed(42)
@@ -45,9 +46,13 @@ def copy_and_create_mask(img_paths, crop=True):
 for folder_path, total_to_take in datasets.items():
     print(folder_path)
 
-    image_paths = np.asarray([os.path.join(folder_path, i) for i in os.listdir(folder_path)])
+    image_paths = np.asarray(
+        [os.path.join(folder_path, i) for i in os.listdir(folder_path)]
+    )
 
-    chosen_image_paths = np.random.choice(image_paths, size=total_to_take, replace=False)
+    chosen_image_paths = np.random.choice(
+        image_paths, size=total_to_take, replace=False
+    )
 
     if folder_path == r"DOCUMENTS\\datasets\\docvqa_images":
         crop = True

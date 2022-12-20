@@ -1,19 +1,19 @@
-import os
+import base64
 import gc
 import io
-import cv2
-import base64
+import os
 import pathlib
-import numpy as np
-from PIL import Image
-import streamlit as st
-from streamlit_drawable_canvas import st_canvas
 
+import cv2
+import numpy as np
+import streamlit as st
 import torch
 import torchvision.transforms as torchvision_T
+from PIL import Image
+from streamlit_drawable_canvas import st_canvas
 from torchvision.models.segmentation import (
-    deeplabv3_resnet50,
     deeplabv3_mobilenet_v3_large,
+    deeplabv3_resnet50,
 )
 
 

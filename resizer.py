@@ -1,9 +1,10 @@
-import os
-import cv2
-import time
 import argparse
-import numpy as np
+import os
+import time
 from multiprocessing import Pool, cpu_count
+
+import cv2
+import numpy as np
 
 
 def creat_dirs(dir_path):
@@ -51,8 +52,12 @@ def operation(data=None):
         imH, imW = image_true.shape[:2]
 
         if not (max(imW, imH) < IMG_SIZE):
-            asp_h, asp_w = ResizeWithAspectRatio(curr_dim=(imH, imW), resize_to=IMG_SIZE)
-            image_true = cv2.resize(image_true, (asp_w, asp_h), interpolation=cv2.INTER_NEAREST)
+            asp_h, asp_w = ResizeWithAspectRatio(
+                curr_dim=(imH, imW), resize_to=IMG_SIZE
+            )
+            image_true = cv2.resize(
+                image_true, (asp_w, asp_h), interpolation=cv2.INTER_NEAREST
+            )
 
         cv2.imwrite(dst_image_path, image_true)
 
@@ -114,9 +119,19 @@ def transform_images_xmls(source_dir, dest_dir, image_size=320):
 
 def main():
     parser = argparse.ArgumentParser(description="Create Training and Validatin splits")
-    parser.add_argument("-s", "--source-dir", required=True, type=str, help="Input Source folder path")
-    parser.add_argument("-d", "--destination-dir", required=True, type=str, help="Output destination folder path")
-    parser.add_argument("-x", "--img-size", required=True, type=int, help="size of resized Image ")
+    parser.add_argument(
+        "-s", "--source-dir", required=True, type=str, help="Input Source folder path"
+    )
+    parser.add_argument(
+        "-d",
+        "--destination-dir",
+        required=True,
+        type=str,
+        help="Output destination folder path",
+    )
+    parser.add_argument(
+        "-x", "--img-size", required=True, type=int, help="size of resized Image "
+    )
 
     args = parser.parse_args()
 
@@ -132,5 +147,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

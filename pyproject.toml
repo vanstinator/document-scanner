@@ -6,6 +6,19 @@ authors = ["Justin Vanderhooft <justinvdhooft@gmail.com>"]
 readme = "README.md"
 packages = [{include = "ml_doc_scanner"}]
 
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # Ignored files/directories
+)/
+'''
+
+[tool.isort]
+profile = "black"
+
 [tool.poetry.dependencies]
 python = ">=3.9,<3.9.7 || >3.9.7,<4.0"
 numpy = "^1.24.0"
@@ -25,6 +38,8 @@ matplotlib = "^3.6.2"
 tqdm = "^4.64.1"
 torchmetrics = "^0.11.0"
 livelossplot = "^0.5.5"
+black = "^22.12.0"
+isort = "^5.11.3"
 
 [build-system]
 requires = ["poetry-core"]

@@ -1,7 +1,8 @@
 import os
-import cv2
-import shutil
 import random
+import shutil
+
+import cv2
 import numpy as np
 
 np.random.seed(1)
@@ -24,8 +25,12 @@ os.makedirs(train_msk_dir, exist_ok=True)
 os.makedirs(valid_img_dir, exist_ok=True)
 os.makedirs(valid_msk_dir, exist_ok=True)
 
-all_img_paths = np.asarray(sorted([os.path.join(og_img_dir, i) for i in os.listdir(og_img_dir)]))
-all_msk_paths = np.asarray(sorted([os.path.join(og_msk_dir, i) for i in os.listdir(og_msk_dir)]))
+all_img_paths = np.asarray(
+    sorted([os.path.join(og_img_dir, i) for i in os.listdir(og_img_dir)])
+)
+all_msk_paths = np.asarray(
+    sorted([os.path.join(og_msk_dir, i) for i in os.listdir(og_msk_dir)])
+)
 
 total_number_of_documents = len(all_img_paths) // img_per_doc
 
@@ -108,4 +113,3 @@ copy(train_img_paths, train_msk_paths, train_img_dir, train_msk_dir)
 
 # Validation set
 copy(valid_img_paths, valid_msk_paths, valid_img_dir, valid_msk_dir)
-

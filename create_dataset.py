@@ -1,16 +1,16 @@
 import os
-import cv2
 import time
-import numpy as np
-from PIL import Image
-import albumentations as A
-from sklearn.utils import shuffle
 from multiprocessing import Pool, cpu_count
-from random import random, uniform, randint
+from random import randint, random, uniform
 
+import albumentations as A
+import cv2
+import numpy as np
 import torch
 import torchvision.transforms as T
 import torchvision.transforms.functional as F
+from PIL import Image
+from sklearn.utils import shuffle
 
 
 def get_random_size(doc_height, doc_width, factor=None):
@@ -42,7 +42,9 @@ def create(cropped_bck_img=None, doc_img=None, doc_msk=None):
 
 
 def extract_image(image, startpoints, endpoints):
-    transformed_img = F.perspective(image, startpoints, endpoints, fill=0, interpolation=T.InterpolationMode.NEAREST)
+    transformed_img = F.perspective(
+        image, startpoints, endpoints, fill=0, interpolation=T.InterpolationMode.NEAREST
+    )
 
     x1, y1 = endpoints[0]
     x2, y2 = endpoints[1]
@@ -60,7 +62,9 @@ def extract_image(image, startpoints, endpoints):
     return new
 
 
-def generate_perspective_transformed_image(transformer, distortion_scale, gen_count, image, mask, shape):
+def generate_perspective_transformed_image(
+    transformer, distortion_scale, gen_count, image, mask, shape
+):
 
     W, H = shape
     random_idx_seed_value = randint(0, 1000000)
@@ -69,17 +73,23 @@ def generate_perspective_transformed_image(transformer, distortion_scale, gen_co
     perspective_imgs = []
 
     for _ in range(gen_count):
-        startpoints, endpoints = transformer.get_params(W, H, distortion_scale=distortion_scale)
+        startpoints, endpoints = transformer.get_params(
+            W, H, distortion_scale=distortion_scale
+        )
         perspective_imgs.append(extract_image(image, startpoints, endpoints))
 
     torch.manual_seed(random_idx_seed_value)
     perspective_msks = []
 
     for _ in range(gen_count):
-        startpoints, endpoints = transformer.get_params(W, H, distortion_scale=distortion_scale)
+        startpoints, endpoints = transformer.get_params(
+            W, H, distortion_scale=distortion_scale
+        )
         perspective_msks.append(extract_image(mask, startpoints, endpoints))
 
-    perspective_imgs, perspective_msks = shuffle(perspective_imgs, perspective_msks, random_state=1)
+    perspective_imgs, perspective_msks = shuffle(
+        perspective_imgs, perspective_msks, random_state=1
+    )
 
     return perspective_imgs, perspective_msks
 
@@ -108,9 +118,33 @@ def operation(params=None):
     if random() > 0.5:
         value = (255, 255, 255)
 
-    opt_aug = A.OpticalDistortion(distort_limit=0.28, interpolation=0, border_mode=0, value=value, mask_value=0, p=0.9)
-    grid_aug = A.GridDistortion(num_steps=2, distort_limit=(-0.22, 0.35), interpolation=0, border_mode=0, value=value, mask_value=0, p=0.9)
-    elastic_aug = A.ElasticTransform(alpha=150, sigma=13, alpha_affine=10, interpolation=0, border_mode=0, value=value, mask_value=0, p=0.9)
+    opt_aug = A.OpticalDistortion(
+        distort_limit=0.28,
+        interpolation=0,
+        border_mode=0,
+        value=value,
+        mask_value=0,
+        p=0.9,
+    )
+    grid_aug = A.GridDistortion(
+        num_steps=2,
+        distort_limit=(-0.22, 0.35),
+        interpolation=0,
+        border_mode=0,
+        value=value,
+        mask_value=0,
+        p=0.9,
+    )
+    elastic_aug = A.ElasticTransform(
+        alpha=150,
+        sigma=13,
+        alpha_affine=10,
+        interpolation=0,
+        border_mode=0,
+        value=value,
+        mask_value=0,
+        p=0.9,
+    )
 
     # One of
     compression_aug = A.ImageCompression(quality_lower=30, quality_upper=80, p=1.0)
@@ -118,7 +152,13 @@ def operation(params=None):
     noise = A.ISONoise(color_shift=(0.05, 0.25), p=0.75)
 
     # One of
-    shadow = A.RandomShadow(shadow_roi=(0.0, 0.0, 1.0, 1.0), num_shadows_lower=0, num_shadows_upper=1, shadow_dimension=3, p=0.7)
+    shadow = A.RandomShadow(
+        shadow_roi=(0.0, 0.0, 1.0, 1.0),
+        num_shadows_lower=0,
+        num_shadows_upper=1,
+        shadow_dimension=3,
+        p=0.7,
+    )
     sunflare = A.RandomSunFlare(
         flare_roi=(0.0, 0.0, 1.0, 1.0),
         angle_lower=0,
@@ -150,7 +190,11 @@ def operation(params=None):
     )
 
     distortion_scale = 0.55
-    perspective_transformer = T.RandomPerspective(distortion_scale=distortion_scale, p=0.7, interpolation=T.InterpolationMode.NEAREST)
+    perspective_transformer = T.RandomPerspective(
+        distortion_scale=distortion_scale,
+        p=0.7,
+        interpolation=T.InterpolationMode.NEAREST,
+    )
 
     NUM_BCK_IMAGS = 6
     total_idxs = np.arange(0, len(BCK_IMGS))
@@ -171,7 +215,9 @@ def operation(params=None):
             shape=(W, H),
         )
 
-        random_bck_indx = np.random.choice(total_idxs, size=NUM_BCK_IMAGS, replace=False)
+        random_bck_indx = np.random.choice(
+            total_idxs, size=NUM_BCK_IMAGS, replace=False
+        )
         bck_imgs_chosen = BCK_IMGS[random_bck_indx]
 
         for idx, bck_img_path in enumerate(bck_imgs_chosen):
@@ -194,7 +240,9 @@ def operation(params=None):
             ymin, xmin, ymax, xmax = get_random_crop(bck_img, height, width)
             cropped_bck_img = bck_img[ymin:ymax, xmin:xmax, :] / 255.0
 
-            final_image = create(cropped_bck_img=cropped_bck_img, doc_img=doc_img, doc_msk=doc_msk)
+            final_image = create(
+                cropped_bck_img=cropped_bck_img, doc_img=doc_img, doc_msk=doc_msk
+            )
 
             bck_img[ymin:ymax, xmin:xmax, :] = final_image
 
@@ -240,7 +288,9 @@ if __name__ == "__main__":
     DOC_IMGS = [os.path.join(DOC_IMG_PATH, i) for i in os.listdir(DOC_IMG_PATH)]
     DOC_MSKS = [os.path.join(DOC_MSK_PATH, i) for i in os.listdir(DOC_MSK_PATH)]
 
-    BCK_IMGS = np.asarray([os.path.join(BCK_IMGS_DIR, i) for i in os.listdir(BCK_IMGS_DIR)])
+    BCK_IMGS = np.asarray(
+        [os.path.join(BCK_IMGS_DIR, i) for i in os.listdir(BCK_IMGS_DIR)]
+    )
 
     os.makedirs(GEN_IMG_DIR, exist_ok=True)
     os.makedirs(GEN_MSK_DIR, exist_ok=True)
@@ -265,7 +315,9 @@ if __name__ == "__main__":
     payloads = []
 
     # loop over the set chunked image paths
-    for i, (doc_img_paths, doc_msk_paths, start_idx) in enumerate(zip(CHUNKED_DOC_IMG_PATH, CHUNKED_DOC_MSK_PATH, startindxs)):
+    for i, (doc_img_paths, doc_msk_paths, start_idx) in enumerate(
+        zip(CHUNKED_DOC_IMG_PATH, CHUNKED_DOC_MSK_PATH, startindxs)
+    ):
         data = {
             "id": i,
             "DOC_IMGS": doc_img_paths,
