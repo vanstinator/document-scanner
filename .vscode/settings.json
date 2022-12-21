@@ -1,10 +1,20 @@
 {
+  "cSpell.enabled": false,
   "editor.formatOnSave": true,
   "python.formatting.provider": "black",
   "[python]": {
       "editor.codeActionsOnSave": {
           "source.organizeImports": true
       },
-  },
+  
+    },
+    
   "python.analysis.typeCheckingMode": "basic",
+
+  // Pylint config to point to the virtualenv pylint
+  "pylint.path": [
+    "~/.env/python",
+    "-m",
+    "pylint"
+  ]
 }
