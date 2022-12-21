@@ -256,7 +256,10 @@ method = st.radio(
     horizontal=True,
 )
 
-col1, col2 = st.columns((6, 5))
+threshold = st.slider("Select Threshold:", 1, 301, 11, 2)
+c = st.slider("Select c:", 1, 30)
+
+col1, col2 = st.columns((6, 12))
 
 if uploaded_file is not None:
 
@@ -277,12 +280,16 @@ if uploaded_file is not None:
     with col2:
         st.title("Scanned")
         final = scan(image_true=image, trained_model=model, image_size=IMAGE_SIZE)
-        st.image(final, channels="BGR", use_column_width=True)
-
-    if final is not None:
-        # Display link.
-        result = Image.fromarray(final[:, :, ::-1])
-        st.markdown(
-            get_image_download_link(result, "output.png", "Download " + "Output"),
-            unsafe_allow_html=True,
+        final = cv2.cvtColor(final, cv2.COLOR_BGR2GRAY)
+        final = cv2.adaptiveThreshold(
+            final, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, threshold, c
         )
+        st.image(final, channels="RGB", use_column_width=True)
+
+    # if final is not None:
+    #     # Display link.
+    #     result = Image.fromarray(final[:, :, ::-1])
+    #     st.markdown(
+    #         get_image_download_link(result, "output.png", "Download " + "Output"),
+    #         unsafe_allow_html=True,
+    #     )
