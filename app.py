@@ -3,6 +3,7 @@ import gc
 import io
 import os
 import pathlib
+from typing import TypeAlias, cast
 
 import cv2
 import numpy as np
@@ -12,9 +13,12 @@ import torchvision.transforms as torchvision_T
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
 from torchvision.models.segmentation import (
+    DeepLabV3,
     deeplabv3_mobilenet_v3_large,
     deeplabv3_resnet50,
 )
+
+Mat: TypeAlias = np.ndarray[int, np.dtype[np.generic]]
 
 
 @st.cache(allow_output_mutation=True)
@@ -85,7 +89,7 @@ def find_dest(pts):
     return order_points(destination_corners)
 
 
-def scan(image_true=None, trained_model=None, image_size=384, BUFFER=10):
+def scan(image_true: Mat, trained_model: DeepLabV3, image_size=384, BUFFER=10):
     global preprocess_transforms
 
     IMAGE_SIZE = image_size
@@ -93,24 +97,24 @@ def scan(image_true=None, trained_model=None, image_size=384, BUFFER=10):
 
     imH, imW, C = image_true.shape
 
-    image_model = cv2.resize(
+    image_model: Mat = cv2.resize(
         image_true, (IMAGE_SIZE, IMAGE_SIZE), interpolation=cv2.INTER_NEAREST
     )
 
     scale_x = imW / IMAGE_SIZE
     scale_y = imH / IMAGE_SIZE
 
-    image_model = preprocess_transforms(image_model)
-    image_model = torch.unsqueeze(image_model, dim=0)
+    image_torch: torch.Tensor = cast(torch.Tensor, preprocess_transforms(image_model))
+    model = torch.unsqueeze(image_torch, dim=0)
 
     with torch.no_grad():
-        out = trained_model(image_model)["out"].cpu()
+        out = trained_model(model)["out"].cpu()
 
-    del image_model
+    del model
     gc.collect()
 
     out = (
-        torch.argmax(out, dim=1, keepdims=True)
+        torch.argmax(out, dim=1, keepdim=True)
         .permute(0, 2, 3, 1)[0]
         .numpy()
         .squeeze()
@@ -159,10 +163,10 @@ def scan(image_true=None, trained_model=None, image_size=384, BUFFER=10):
         box_corners = np.int32(box)
         #     box_corners = minimum_bounding_rectangle(corners)
 
-        box_x_min = np.min(box_corners[:, 0])
-        box_x_max = np.max(box_corners[:, 0])
-        box_y_min = np.min(box_corners[:, 1])
-        box_y_max = np.max(box_corners[:, 1])
+        box_x_min = np.min(box_corners[:, 0])  # type: ignore
+        box_x_max = np.max(box_corners[:, 0])  # type: ignore
+        box_y_min = np.min(box_corners[:, 1])  # type: ignore
+        box_y_max = np.max(box_corners[:, 1])  # type: ignore
 
         # Find corner point which doesn't satify the image constraint
         # and record the amount of shift required to make the box
@@ -192,17 +196,17 @@ def scan(image_true=None, trained_model=None, image_size=384, BUFFER=10):
         image_extended = image_extended.astype(np.float32)
 
         # shifting 'box_corners' the required amount
-        box_corners[:, 0] += left_pad
-        box_corners[:, 1] += top_pad
+        box_corners[:, 0] += left_pad  # type: ignore
+        box_corners[:, 1] += top_pad  # type: ignore
 
         corners = box_corners
         image_true = image_extended
 
-    corners = sorted(corners.tolist())
+    corners = sorted(corners.tolist())  # type: ignore
     corners = order_points(corners)
     destination_corners = find_dest(corners)
     M = cv2.getPerspectiveTransform(
-        np.float32(corners), np.float32(destination_corners)
+        np.float32(corners), np.float32(destination_corners)  # type: ignore
     )
 
     final = cv2.warpPerspective(
@@ -228,7 +232,7 @@ def get_image_download_link(img, filename, text):
 
 # We create a downloads directory within the streamlit static asset directory
 # and we write output files to it
-STREAMLIT_STATIC_PATH = pathlib.Path(st.__path__[0]) / "static"
+STREAMLIT_STATIC_PATH = pathlib.Path(st.__path__[0]) / "static"  # type: ignore
 DOWNLOADS_PATH = STREAMLIT_STATIC_PATH / "downloads"
 if not DOWNLOADS_PATH.is_dir():
     DOWNLOADS_PATH.mkdir()
@@ -236,7 +240,7 @@ if not DOWNLOADS_PATH.is_dir():
 
 IMAGE_SIZE = 384
 preprocess_transforms = image_preprocess_transforms()
-image = None
+image = None  # type: ignore
 final = None
 result = None
 
@@ -258,7 +262,7 @@ if uploaded_file is not None:
 
     # Convert the file to an opencv image.
     file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-    image = cv2.imdecode(file_bytes, 1)
+    image: Mat = cv2.imdecode(file_bytes, 1)
     h, w = image.shape[:2]
 
     if method == "MobilenetV3-Large":

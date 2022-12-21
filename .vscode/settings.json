@@ -3,6 +3,7 @@
   "editor.formatOnSave": true,
   "python.formatting.provider": "black",
   "python.formatting.blackPath": "~/.env/python",
+  "python.linting.enabled": true,
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.codeActionsOnSave": {
